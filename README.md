@@ -1,5 +1,11 @@
 # Framework Dev NixOS Live
 
-Private, work-in-progress configuration for a headless NixOS live development workstation.
+Declarative NixOS live environment for a headless development workstation.
 
-Implementation is developed on `feat/nixos-live` before review and merge. Builds are manual-only.
+The project provides reproducible, removable-media boot images with remote SSH access and development tooling. The live system uses an ephemeral writable filesystem.
+
+ISO builds are intended to be run explicitly, not automatically on repository changes.
+
+## License
+
+Original materials: copyright © 2026 brackxm. All rights reserved. See [LICENSE](LICENSE). Third-party components retain their own licenses.
