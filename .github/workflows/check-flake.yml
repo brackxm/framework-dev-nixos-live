@@ -1,0 +1,16 @@
+name: Check Nix flake (no build)
+
+# Expose the manual workflow selector on the default branch.
+# Select feat/nixos-live in "Run workflow" to execute the real check there.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noop:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Placeholder
+        run: echo "This is the default-branch placeholder; select a development branch to run its check."

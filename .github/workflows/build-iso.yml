@@ -1,0 +1,25 @@
+name: Build NixOS Live ISO
+
+# Placeholder to register the manual workflow on the default branch.
+# Select a development branch to execute the build workflow there.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "ISO profile to build"
+        required: true
+        default: bootstrap
+        type: choice
+        options:
+          - bootstrap
+          - dev
+
+permissions:
+  contents: read
+
+jobs:
+  noop:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "No ISO build is defined on the default branch."
