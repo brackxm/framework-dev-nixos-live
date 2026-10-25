@@ -1,0 +1,56 @@
+name: Build NixOS Live ISO
+
+# Deliberately NO push, pull_request, or schedule triggers.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Build bootstrap first, then dev after SSH has been verified"
+        required: true
+        default: bootstrap
+        type: choice
+        options:
+          - bootstrap
+          - dev
+
+permissions:
+  contents: read
+
+jobs:
+  iso:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate SSH public key
+        run: bash scripts/check-keys.sh
+      - uses: cachix/install-nix-action@v31
+      - name: Generate temporary lock only if missing
+        run: |
+          if test ! -f flake.lock; then
+            echo 'WARNING: flake.lock not committed; build is NOT revision pinned'
+            nix flake lock
+          fi
+      - name: Build x86-64 ISO
+        run: nix build .#${{ inputs.profile }}Iso --print-build-logs -o result
+      - name: Check ISO fits 4 GB USB
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          iso=(result/iso/*.iso)
+          test "${#iso[@]}" -eq 1
+          bytes=$(stat -L -c '%s' "${iso[0]}")
+          echo "ISO size: $bytes bytes"
+          if (( bytes > 3750000000 )); then
+            echo 'ISO exceeds conservative 4 GB stick size limit' >&2
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dev-${{ inputs.profile }}-iso
+          path: |
+            result/iso/*.iso
+            flake.lock
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
