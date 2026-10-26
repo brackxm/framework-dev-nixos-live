@@ -1,12 +1,11 @@
 name: Build NixOS Live ISO
 
-# Placeholder to register the manual workflow on the default branch.
-# Select a development branch to execute the build workflow there.
+# Manual dispatch only: never build an ISO on a branch push.
 on:
   workflow_dispatch:
     inputs:
       profile:
-        description: "ISO profile to build"
+        description: "Build bootstrap first, then dev after SSH has been verified"
         required: true
         default: bootstrap
         type: choice
@@ -18,8 +17,27 @@ permissions:
   contents: read
 
 jobs:
-  noop:
-    if: ${{ false }}
+  iso:
     runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: write  # Required for gh release create on this job only.
     steps:
-      - run: echo "No ISO build is defined on the default branch."
+      - uses: actions/checkout@v4
+      - name: Validate SSH public key
+        run: bash scripts/check-keys.sh
+      - name: Validate ISO release publisher syntax
+        run: bash -n scripts/publish-iso-release.sh
+      - uses: cachix/install-nix-action@v31
+      - name: Require committed flake.lock
+        run: |
+          test -f flake.lock || { echo 'Commit a generated flake.lock before building' >&2; exit 1; }
+          nix flake metadata --no-update-lock-file >/dev/null
+      - name: Build x86-64 ISO
+        run: nix build .#${{ inputs.profile }}Iso --print-build-logs -o result
+      - name: Create draft GitHub Release with ISO and SHA-256
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PROFILE: ${{ inputs.profile }}
+        run: bash scripts/publish-iso-release.sh "$PROFILE"
