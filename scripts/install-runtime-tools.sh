@@ -6,8 +6,8 @@ usage() {
 Usage: install-runtime-tools claude [op]
        install-runtime-tools op [claude]
 
-Install proprietary command-line tools into the current user's ephemeral
-Nix profile on request, not during the ISO build.
+Install proprietary command-line tools into the current user's Nix profile
+on request, not during ISO creation. This state persists only on installed systems.
 
   claude    Claude Code CLI
   op        1Password CLI
@@ -22,7 +22,7 @@ if [[ $# -eq 0 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 fi
 
 # Scope acceptance of unfree packages to these explicit commands.
-# Use the same fixed Nixpkgs revision as the ISO; package versions are pinned by it.
+# Use the same fixed Nixpkgs revision as the OS profiles; package versions are pinned by it.
 base="github:NixOS/nixpkgs/1f607aa79b6356ed45d3cd3c8079c196e79efa2c"
 
 for tool in "$@"; do

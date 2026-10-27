@@ -1,6 +1,6 @@
 name: Check Nix flake (no build)
 
-# Explicitly dispatched only; no build, push, or PR triggers.
+# Manually dispatched only; evaluates live, installed and SSD image profiles.
 on:
   workflow_dispatch:
 
@@ -13,5 +13,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v31
-      - name: Evaluate both profiles without building
+      - name: Evaluate live and installed profiles without building
         run: nix flake check --no-build --show-trace --all-systems

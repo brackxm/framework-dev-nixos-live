@@ -1,0 +1,55 @@
+name: Build NixOS SSD Image
+
+# Manual dispatch only; no automatic build on push or PR.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: write  # Only for creating the draft GitHub Release.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check publication script syntax
+        run: bash -n scripts/publish-ssd-release.sh
+      - name: Free runner disk space for the image build
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          df -h /
+      - uses: cachix/install-nix-action@v31
+      - name: Check locked flake inputs
+        run: |
+          test -f flake.lock
+          nix flake metadata --no-update-lock-file >/dev/null
+      - name: Build UEFI/GPT SSD raw image
+        run: nix build .#ssdImage --print-build-logs -o result
+      - name: Verify disk image partition table
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          images=(result/*.img)
+          test "${#images[@]}" -eq 1
+          file "${images[0]}"
+          sfdisk -d "${images[0]}" | tee /tmp/ssd-partitions.txt
+          grep -q '^label: gpt' /tmp/ssd-partitions.txt
+          python3 - "${images[0]}" <<'PY'
+          import json, subprocess, sys
+          j = json.loads(subprocess.check_output(["sfdisk", "--json", sys.argv[1]]))
+          parts = j["partitiontable"]["partitions"]
+          assert len(parts) == 2, f"Expected EFI and root partitions, got {len(parts)}"
+          assert parts[0]["type"].upper() == "C12A7328-F81F-11D2-BA4B-00A0C93EC93B", parts[0]
+          assert parts[1]["type"].upper() == "0FC63DAF-8483-4772-8E79-3D69D8477DE4", parts[1]
+          print("Partition layout verified: GPT, EFI System, Linux root")
+          PY
+      - name: Upload compressed chunks to draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/publish-ssd-release.sh
