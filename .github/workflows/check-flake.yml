@@ -1,7 +1,6 @@
 name: Check Nix flake (no build)
 
-# Expose the manual workflow selector on the default branch.
-# Select feat/nixos-live in "Run workflow" to execute the real check there.
+# Manually dispatched only; evaluates live, installed and SSD image profiles.
 on:
   workflow_dispatch:
 
@@ -9,8 +8,10 @@ permissions:
   contents: read
 
 jobs:
-  noop:
+  check:
     runs-on: ubuntu-24.04
     steps:
-      - name: Placeholder
-        run: echo "This is the default-branch placeholder; select a development branch to run its check."
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: Evaluate live and installed profiles without building
+        run: nix flake check --no-build --show-trace --all-systems
