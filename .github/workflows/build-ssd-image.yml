@@ -1,7 +1,12 @@
 name: Build NixOS SSD Image
 
-# Manual dispatch only; no automatic build on push or PR.
+# Temporary one-shot trigger for an explicitly requested SSD build.
+# Only changes to this workflow on feat/nixos-installed can trigger it.
 on:
+  push:
+    branches: [feat/nixos-installed]
+    paths:
+      - .github/workflows/build-ssd-image.yml
   workflow_dispatch:
 
 permissions:
@@ -62,3 +67,42 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: bash scripts/publish-ssd-release.sh
+
+      - name: Restore manual-only workflow after successful draft release
+        if: ${{ github.event_name == 'push' }}
+        continue-on-error: true # Workflow-file writes may be restricted by GITHUB_TOKEN.
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path(".github/workflows/build-ssd-image.yml")
+          original = """# Temporary one-shot trigger for an explicitly requested SSD build.
+# Only changes to this workflow on feat/nixos-installed can trigger it.
+on:
+  push:
+    branches: [feat/nixos-installed]
+    paths:
+      - .github/workflows/build-ssd-image.yml
+  workflow_dispatch:
+"""
+          restored = """# Manual dispatch only; no automatic build on push or PR.
+on:
+  workflow_dispatch:
+"""
+          current = p.read_text()
+          if current.count(original) != 1:
+              raise SystemExit("Expected one-shot trigger missing or modified")
+          current = current.replace(original, restored, 1)
+          # Remove this one-time cleanup step by keeping only the original workflow.
+          marker = "\n      - name: Restore manual-only workflow after successful draft release\n"
+          if current.count(marker) != 1:
+              raise SystemExit("Cleanup step marker missing")
+          current = current.split(marker, 1)[0].rstrip() + "\n"
+          p.write_text(current)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/build-ssd-image.yml
+          git commit -m "ci: restore manual-only SSD build after successful release [skip ci]"
+          git push origin "HEAD:refs/heads/feat/nixos-installed"
