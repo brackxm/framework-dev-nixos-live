@@ -23,7 +23,7 @@ fi
 
 # Scope acceptance of unfree packages to these explicit commands.
 # Use the same fixed Nixpkgs revision as the OS profiles; package versions are pinned by it.
-base="github:NixOS/nixpkgs/1f607aa79b6356ed45d3cd3c8079c196e79efa2c"
+base="github:NixOS/nixpkgs/08d3a97586f6b6343b3b5e799980773629432610"
 
 for tool in "$@"; do
   case "$tool" in
