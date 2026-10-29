@@ -11,12 +11,19 @@ jobs:
   image:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
-    permissions:
-      contents: write  # Only for creating the draft GitHub Release.
     steps:
       - uses: actions/checkout@v4
       - name: Check publication script syntax
         run: bash -n scripts/publish-ssd-release.sh
+      - name: Require release publishing credential before building
+        shell: bash
+        env:
+          SSD_RELEASE_TOKEN: ${{ secrets.SSD_RELEASE_TOKEN }}
+        run: |
+          if [[ -z "${SSD_RELEASE_TOKEN:-}" ]]; then
+            echo "::error::Add repository Actions secret SSD_RELEASE_TOKEN with Contents: write and Workflows: write permissions before building."
+            exit 1
+          fi
       - name: Free runner disk space for the image build
         run: |
           df -h /
@@ -50,6 +57,8 @@ jobs:
           PY
       - name: Upload compressed chunks to draft GitHub Release
         env:
-          GH_TOKEN: ${{ github.token }}
+          # The built-in GITHUB_TOKEN cannot publish releases targeting commits
+          # that change workflows relative to the repository's default branch.
+          GH_TOKEN: ${{ secrets.SSD_RELEASE_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: bash scripts/publish-ssd-release.sh
