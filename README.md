@@ -75,13 +75,14 @@ connected over USB to a Mac. **Flashing overwrites the selected SSD.**
 
 **Release publishing:** The October 29 Nixpkgs refresh passed evaluation,
 SSD image creation and GPT verification, but GitHub refused the draft release
-creation (HTTP 403). The October 27 draft above is still the last available
-image and does **not** contain the October 29 update. A fresh build needs the
-repository Actions secret `SSD_RELEASE_TOKEN`, using a repository-scoped
-fine-grained token with **Contents: write** and **Workflows: write** because
-the release target differs from the default branch under `.github/workflows/`.
-The workflow checks for the secret before building and uses it only for
-publishing; see the flash guide for setup.
+creation (HTTP 403) after a temporary workflow generated a new commit and
+the source branch was modified while the build was running. The October 27
+draft above is still the last downloadable image and does **not** contain the
+October 29 update. The normal manual SSD build uses the built-in
+`GITHUB_TOKEN` (with `contents: write`) as in the successful October 27 run.
+Keep the flake lockfile committed before triggering the build and do not move
+the source branch during the run. The workflow checks the branch tip before
+publication to avoid targeting an older commit. See the flash guide for details.
 
 See [Flash a NixOS SSD image from macOS](docs/flash-ssd-from-mac.md).
 
