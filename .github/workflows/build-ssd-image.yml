@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write  # Required to create a GitHub draft release.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check publication script syntax
         run: bash -n scripts/publish-ssd-release.sh
       - name: Free runner disk space for the image build

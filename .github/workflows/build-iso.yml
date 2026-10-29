@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: write  # Required for gh release create on this job only.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate SSH public key
         run: bash scripts/check-keys.sh
       - name: Validate ISO release publisher syntax
