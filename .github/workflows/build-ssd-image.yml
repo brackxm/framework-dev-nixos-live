@@ -11,19 +11,12 @@ jobs:
   image:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
+    permissions:
+      contents: write  # Required to create a GitHub draft release.
     steps:
       - uses: actions/checkout@v4
       - name: Check publication script syntax
         run: bash -n scripts/publish-ssd-release.sh
-      - name: Require release publishing credential before building
-        shell: bash
-        env:
-          SSD_RELEASE_TOKEN: ${{ secrets.SSD_RELEASE_TOKEN }}
-        run: |
-          if [[ -z "${SSD_RELEASE_TOKEN:-}" ]]; then
-            echo "::error::Add repository Actions secret SSD_RELEASE_TOKEN with Contents: write and Workflows: write permissions before building."
-            exit 1
-          fi
       - name: Free runner disk space for the image build
         run: |
           df -h /
@@ -55,10 +48,17 @@ jobs:
           assert parts[1]["type"].upper() == "0FC63DAF-8483-4772-8E79-3D69D8477DE4", parts[1]
           print("Partition layout verified: GPT, EFI System, Linux root")
           PY
+      - name: Ensure release targets current branch HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote_sha="$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | awk '{print $1}')"
+          if [[ -z "$remote_sha" || "$remote_sha" != "$GITHUB_SHA" ]]; then
+            echo "::error::The source branch moved during the build (started at $GITHUB_SHA; now ${remote_sha:-unknown}). Do not publish an older commit; launch a fresh workflow run."
+            exit 1
+          fi
       - name: Upload compressed chunks to draft GitHub Release
         env:
-          # The built-in GITHUB_TOKEN cannot publish releases targeting commits
-          # that change workflows relative to the repository's default branch.
-          GH_TOKEN: ${{ secrets.SSD_RELEASE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: bash scripts/publish-ssd-release.sh
