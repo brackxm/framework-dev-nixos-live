@@ -73,6 +73,16 @@ passed GPT verification, but physical SSD booting remains untested. The
 **Build NixOS SSD Image** workflow is manual-only. Download, reconstruct, verify and flash the image with the SSD
 connected over USB to a Mac. **Flashing overwrites the selected SSD.**
 
+**Release publishing:** The October 29 Nixpkgs refresh passed evaluation,
+SSD image creation and GPT verification, but GitHub refused the draft release
+creation (HTTP 403). The October 27 draft above is still the last available
+image and does **not** contain the October 29 update. A fresh build needs the
+repository Actions secret `SSD_RELEASE_TOKEN`, using a repository-scoped
+fine-grained token with **Contents: write** and **Workflows: write** because
+the release target differs from the default branch under `.github/workflows/`.
+The workflow checks for the secret before building and uses it only for
+publishing; see the flash guide for setup.
+
 See [Flash a NixOS SSD image from macOS](docs/flash-ssd-from-mac.md).
 
 ## Optional proprietary tools
