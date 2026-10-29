@@ -1,6 +1,6 @@
 {
   description = "Headless NixOS development environment";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/1f607aa79b6356ed45d3cd3c8079c196e79efa2c";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/08d3a97586f6b6343b3b5e799980773629432610";
   # Pin Framework Desktop hardware support to a reviewed upstream revision.
   inputs.nixos-hardware.url = "github:NixOS/nixos-hardware/1b418b8f203e49a92f250f8babdd19af1b6f7a7f";
   inputs.nixos-hardware.inputs.nixpkgs.follows = "nixpkgs";
