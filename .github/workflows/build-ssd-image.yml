@@ -1,0 +1,17 @@
+name: Build NixOS SSD Image
+
+# Default-branch placeholder to register the manual workflow in GitHub Actions.
+# Select feat/nixos-installed under "Run workflow" for the real SSD build.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  noop:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Default branch has no SSD build
+        run: echo "Select feat/nixos-installed to build the SSD image."
