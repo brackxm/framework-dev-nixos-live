@@ -1,0 +1,82 @@
+name: Verify NixOS dependency refresh and build SSD image
+
+# One-off verification workflow for the dedicated update branch.
+# Remove this file after the verified update is prepared for merging.
+on:
+  push:
+    branches:
+      - chore/nixos-26-05-refresh-2026-10-29
+
+permissions:
+  contents: write
+
+jobs:
+  update-and-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+
+      - name: Regenerate and verify Nixpkgs flake lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix flake update nixpkgs
+          jq -e --arg rev '08d3a97586f6b6343b3b5e799980773629432610' '.nodes.nixpkgs.locked.rev == $rev' flake.lock
+          jq -e --arg rev '1b418b8f203e49a92f250f8babdd19af1b6f7a7f' '.nodes["nixos-hardware"].locked.rev == $rev' flake.lock
+          nix flake metadata --no-update-lock-file >/dev/null
+
+      - name: Commit generated lockfile to update branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flake.lock
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: lock refreshed NixOS 26.05 packages'
+            git push origin HEAD:refs/heads/chore/nixos-26-05-refresh-2026-10-29
+          fi
+
+      - name: Evaluate all profiles without building
+        run: nix flake check --no-build --show-trace --all-systems
+
+      - name: Free runner disk space for SSD image
+        shell: bash
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          df -h /
+
+      - name: Build updated SSD image
+        run: nix build .#ssdImage --print-build-logs -o result
+
+      - name: Verify GPT and partition types
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          images=(result/*.img)
+          test "${#images[@]}" -eq 1
+          file "${images[0]}"
+          sfdisk -d "${images[0]}"
+          python3 - "${images[0]}" <<'PY'
+          import json, subprocess, sys
+          j = json.loads(subprocess.check_output(["sfdisk", "--json", sys.argv[1]]))
+          parts = j["partitiontable"]["partitions"]
+          assert j["partitiontable"]["label"] == "gpt"
+          assert len(parts) == 2, parts
+          assert parts[0]["type"].upper() == "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
+          assert parts[1]["type"].upper() == "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
+          print("GPT, EFI System and Linux root verified")
+          PY
+
+      - name: Publish a new draft SSD release, preserving existing image
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          GITHUB_SHA="$(git rev-parse HEAD)" bash scripts/publish-ssd-release.sh
