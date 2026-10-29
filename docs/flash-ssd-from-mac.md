@@ -17,6 +17,19 @@ From GitHub Actions, manually launch **Build NixOS SSD Image** on branch
 image parts to a **draft** GitHub Release; the release must be downloaded with
 GitHub CLI authentication.
 
+**One-time release credential setup:** GitHub requires a token with both
+**Contents: read and write** and **Workflows: read and write** when a release
+targets a commit whose workflow files differ from the default branch. The
+built-in `GITHUB_TOKEN` cannot obtain the Workflows permission. Create a
+fine-grained personal access token scoped **only to this repository** with those
+two repository permissions, then store it under GitHub **Settings → Secrets
+and variables → Actions → New repository secret** as `SSD_RELEASE_TOKEN`.
+Prefer a short-lived token and rotate or revoke it when not needed. Never
+commit a token or put one in the disk image. The workflow checks that the
+secret exists before starting the expensive image build, and only passes
+it to the GitHub Release publication step. Without it, the build fails early
+and the existing release remains intact.
+
 Image contents are not encrypted. The image contains the intended SSH **public**
 key for user `nixos`, not a password or private key. Before exposing it to an
 untrusted network, review passwordless sudo and SSH access.
