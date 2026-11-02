@@ -15,7 +15,7 @@ in
     toolchain.node toolchain.pnpm
     python3 gcc gnumake glibc.static postgresql_17
     git gh codex wrangler temporal-cli docker-compose elan zellij
-    openssl wget unzip zip
+    openssl wget unzip zip tectonic bubblewrap
     # The helper is embedded; proprietary executables are not.
     (writeShellScriptBin "install-runtime-tools"
       (builtins.readFile ../scripts/install-runtime-tools.sh))
