@@ -6,12 +6,14 @@ in
   # Shared development toolchain. The live ISO includes ram-storage.nix separately.
   # Installed systems keep /workspace and /var/lib/docker on persistent disk.
   programs.nix-ld.enable = true;
+  # Static C builds use the same pinned libc as the installed compiler.
+  environment.variables.LIBRARY_PATH = "${pkgs.glibc.static}/lib";
   virtualisation.docker.enable = true;
   users.users.nixos.extraGroups = [ "docker" ];
 
   environment.systemPackages = with pkgs; [
     toolchain.node toolchain.pnpm
-    python3 gcc gnumake postgresql_17
+    python3 gcc gnumake glibc.static postgresql_17
     git gh codex wrangler temporal-cli docker-compose elan zellij
     openssl wget unzip zip
     # The helper is embedded; proprietary executables are not.
