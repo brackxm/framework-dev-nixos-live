@@ -43,7 +43,7 @@
   # on an installed system; SSH access comes from ./common.nix.
   users.users.nixos = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [ "wheel" "networkmanager" "video" ];
   };
   security.sudo.wheelNeedsPassword = false;
 
