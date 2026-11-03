@@ -39,6 +39,12 @@
   # Firmware is not flashed automatically during NixOS installation.
   services.fwupd.enable = true;
 
+  # Local model server with AMD GPU acceleration and SSD-backed model storage.
+  services.ollama = {
+    enable = true;
+    package = pkgs.ollama-rocm;
+  };
+
   # The live ISO creates its own nixos account. Define the account explicitly
   # on an installed system; SSH access comes from ./common.nix.
   users.users.nixos = {

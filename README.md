@@ -57,6 +57,20 @@ The October 29 SSD image includes these tools and scheduled maintenance.
 After installation, later updates can also be applied with
 `nixos-rebuild switch --flake ...#installed` without reflashing.
 
+## Local models (installed system)
+
+The installed profile enables Ollama with the ROCm backend for the Framework
+Desktop's AMD GPU. The API listens on `127.0.0.1:11434`; no firewall port is
+opened. Models are downloaded on demand and persist under
+`/var/lib/ollama/models`.
+
+Run `ollama list` on `dev`, then use `ollama pull MODEL` or `ollama run MODEL`
+to download a model. To access the API from a Mac, keep an SSH tunnel open:
+
+```sh
+ssh -N -L 11434:127.0.0.1:11434 dev
+```
+
 ## Flashable SSD image (Mac + USB enclosure)
 
 The `packages.x86_64-linux.ssdImage` output produces a bootable GPT/UEFI raw
