@@ -105,7 +105,28 @@ After boot, both development profiles provide an explicit helper to download pro
 install-runtime-tools claude op
 ```
 
-Either tool can be installed separately. Neither is downloaded during ISO builds or installed automatically at boot. The helper temporarily permits unfree packages for the requested commands, requires network access, and does not handle authentication. Installation must be repeated after a live-system reboot, but remains available across reboots on a persistent installation. Runtime installation is not yet hardware-tested.
+Either tool can be installed separately. Neither is downloaded during ISO builds or
+installed automatically at boot. The helper requires network access, temporarily
+permits the requested unfree packages, and does not handle authentication.
+
+Claude Code uses the latest official release at the time you run the helper.
+Its version and binary checksums come from Anthropic's release manifest; the
+Nix wrapper and dependencies still use the workstation's fixed Nixpkgs revision.
+The package is built and checked before replacing the existing Claude profile
+entry. Re-running the helper skips an identical release, and a failed replacement
+attempt restores the previous package. 1Password continues to use the OS's
+pinned package.
+
+Nix-managed tools do not update themselves. Run the helper again to update Claude,
+then restart its running sessions or user service, such as
+`systemctl --user restart claude-remote-collect.service` on this workstation.
+Installation is ephemeral on live media and persistent on an installed system.
+
+Installer regression checks (Python 3, Bash and jq required):
+
+```sh
+python3 scripts/check-runtime-installer.py
+```
 
 ## SSH setup
 
